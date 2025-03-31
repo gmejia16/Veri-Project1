@@ -8,38 +8,47 @@
 //
 //////////////////////////////////////////////////////////
 
-module reg_file (clk, rst, we, addr_wr, data_in, addr_rd1,
-                 addr_rd2, data_out1, data_out2);
+module reg_file (
+    input clk,               // Reloj
+    input rst,               // Reset
+    input we,                // Habilitación de escritura
+    input [3:0] addr_wr,     // Dirección de escritura
+    input [15:0] data_in,    // Datos de entrada
+    input [3:0] addr_rd1,    // Dirección del primer registro a leer
+    input [3:0] addr_rd2,    // Dirección del segundo registro a leer
+    output [15:0] data_out1, // Datos del primer registro leído
+    output [15:0] data_out2  // Datos del segundo registro leído
+);
 
-    input logic clk;             // Señal de reloj
-    input logic rst;             // Señal de reset (asincrónico)
-    input logic we;              // Señal de habilitación de escritura
-    input logic [3:0] addr_wr;   // Dirección del registro a escribir
-    input logic [15:0] data_in;  // Dato a escribir en el registro
-    input logic [3:0] addr_rd1;  // Dirección del primer registro a leer
-    input logic [3:0] addr_rd2;  // Dirección del segundo registro a leer
-    output logic [15:0] data_out1; // Salida de datos del primer registro leído
-    output logic [15:0] data_out2; // Salida de datos del segundo registro leído
+    // Declaración de registros
+    reg [15:0] registers [0:13];  // Banco de 14 registros de 16 bits cada uno
 
-    logic [15:0] registers [0:13]; // Banco de 14 registros de 16 bits cada uno
-
-    // Lectura asíncrona de los registros
+    // Lectura asíncrona
     assign data_out1 = registers[addr_rd1];
     assign data_out2 = registers[addr_rd2];
 
-    // Escritura sincrónica en el flanco positivo del reloj o reset
-    always_ff @(posedge clk or posedge rst) begin
+    // Escritura sincrónica
+    always @(posedge clk or posedge rst) begin
         if (rst) begin
-            integer i;
-            // Inicializa todos los registros en 0 al activarse el reset
-            for (i = 0; i < 14; i = i + 1) begin
-                registers[i] <= 16'h0000;
-            end
+            // Inicialización explícita de todos los registros a 0 en el reset
+
+            registers[0] <= 16'h0000;
+            registers[1] <= 16'h0000;
+            registers[2] <= 16'h0000;
+            registers[3] <= 16'h0000;
+            registers[4] <= 16'h0000;
+            registers[5] <= 16'h0000;
+            registers[6] <= 16'h0000;
+            registers[7] <= 16'h0000;
+            registers[8] <= 16'h0000;
+            registers[9] <= 16'h0000;
+            registers[10] <= 16'h0000;
+            registers[11] <= 16'h0000;
+            registers[12] <= 16'h0000;
+            registers[13] <= 16'h0000;
         end else if (we) begin
-            // Escribe el dato en el registro indicado por addr_wr si we está activo
             registers[addr_wr] <= data_in;
         end
     end
 
 endmodule
-
