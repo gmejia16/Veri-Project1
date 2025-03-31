@@ -15,7 +15,7 @@ module mux (in0, in1, in2, in3, in4, in5, in6, in7, in8,
     input [3:0] sel;               // Señal de selección
     output reg [15:0] out_data;   // Salida del multiplexor
 
-    always @(*) begin
+    always @(*) begin // El always (*) lista todas las señales que estan dentro del always
         case (sel)
             4'b0000: out_data = in0;
             4'b0001: out_data = in1;
