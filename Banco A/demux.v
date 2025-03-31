@@ -11,18 +11,29 @@ module demux (in_data, sel, out0, out1, out2, out3, out4,
               out5, out6, out7, out8, out9, out10, out11, 
               out12, out13 );
 
-    input logic [15:0] in_data;   // Entrada de datos
-    input logic [3:0] sel;        // Selector del registro destino
+    input [15:0] in_data;   // Entrada de datos
+    input [3:0] sel;        // Selector del registro destino
 
-    output logic [15:0] out0, out1, out2, out3, out4, out5, out6, out7;
-    output logic [15:0] out8, out9, out10, out11, out12, out13;
+    output reg [15:0] out0, out1, out2, out3, out4, out5, out6, out7,
+                      out8, out9, out10, out11, out12, out13;
 
-    always_comb begin
+
+    always @(*) begin
         // Inicializa todas las salidas a 0
-        out0 = 16'h0000; out1 = 16'h0000; out2 = 16'h0000; out3 = 16'h0000;
-        out4 = 16'h0000; out5 = 16'h0000; out6 = 16'h0000; out7 = 16'h0000;
-        out8 = 16'h0000; out9 = 16'h0000; out10 = 16'h0000; out11 = 16'h0000;
-        out12 = 16'h0000; out13 = 16'h0000;
+        out0 = 16'h0000; 
+        out1 = 16'h0000; 
+        out2 = 16'h0000; 
+        out3 = 16'h0000;
+        out4 = 16'h0000; 
+        out5 = 16'h0000; 
+        out6 = 16'h0000; 
+        out7 = 16'h0000;
+        out8 = 16'h0000; 
+        out9 = 16'h0000; 
+        out10 = 16'h0000; 
+        out11 = 16'h0000;
+        out12 = 16'h0000; 
+        out13 = 16'h0000;
 
         // Activa la salida correspondiente según la selección
         case (sel)
