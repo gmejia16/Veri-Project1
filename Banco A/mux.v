@@ -13,10 +13,9 @@ module mux (in0, in1, in2, in3, in4, in5, in6, in7, in8,
     input [15:0] in0, in1, in2, in3, in4, in5, in6, in7;
     input [15:0] in8, in9, in10, in11, in12, in13;
     input [3:0] sel;               // Señal de selección
-    output logic [15:0] out_data;   // Salida del multiplexor
+    output reg [15:0] out_data;   // Salida del multiplexor
 
-    always_comb begin
-        // Selecciona la salida según la señal de selección
+    always @(*) begin
         case (sel)
             4'b0000: out_data = in0;
             4'b0001: out_data = in1;
@@ -34,6 +33,7 @@ module mux (in0, in1, in2, in3, in4, in5, in6, in7, in8,
             4'b1101: out_data = in13;
             default: out_data = 16'h0000; // Valor por defecto
         endcase
+        
     end
 
 endmodule
