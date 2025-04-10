@@ -1,17 +1,17 @@
-////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////
 // tester.sv 
 // Testbench para banco de registros con generación de 
 // archivo .log y reporte
-////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////
 
 module tester;
 
     // Parámetros de configuración
     parameter clk_period = 10;
-    parameter num_regs = 14;
-    parameter num_random_tests = 100;
-    parameter log_file = "test_log.log";
-    parameter report_file = "test_report.txt";
+    parameter num_regs = 14;                   
+    parameter num_random_tests = 100;          
+    parameter log_file = "test_log.log";       
+    parameter report_file = "test_report.txt"; 
 
     // Señales
     logic        clk      = 0; //señal de reloj
@@ -33,7 +33,7 @@ module tester;
     integer read_count = 0;
     integer reset_count = 0;
 
-    // Instancia del DUT
+    // Instancia del DUT (Banco de registros)
     top dut (
         .clk(clk),
         .rst(rst),
@@ -47,12 +47,13 @@ module tester;
     // Generación del reloj
     always #(clk_period/2) clk = ~clk;
 
-    // Función para log
+    // Función para escribir en el .log
     function void write_log(string mensaje);
         $fdisplay(log_file_, "[T=%0t] %s", $time, mensaje);
         $display("[T=%0t] %s", $time, mensaje);
     endfunction
 
+    //Tarea para iniciar y finalizar la prueba
     task begin_test(input string test_name);
         current_test = test_name;
         write_log($sformatf("\n== Iniciando prueba: %s ==", test_name));
@@ -63,6 +64,7 @@ module tester;
         current_test = "None";
     endtask
 
+    //Tarea para reiniciar el banco de registros
     task reset_bank();
         write_log("Realizando reset...");
         rst = 1;
@@ -75,7 +77,7 @@ module tester;
         write_log("Reset completado. Los registros están en 0");
     endtask
 
-
+    //Tarea para escribir en un registro
     task write_register(input [3:0] reg_addr, input [15:0] value);
         write_log($sformatf("Escribiendo %h en el registro %0d", value, reg_addr));
         write_en = 1;
@@ -94,6 +96,7 @@ module tester;
         end
     endtask
 
+    //Tarea para leer un registro
     task read_register(input [3:0] reg_addr, output [15:0] value);
         write_en = 0;
         read_en = 1;
@@ -105,6 +108,7 @@ module tester;
         write_log($sformatf("Lectura realizada. Registro %0d = %h", reg_addr, value));
     endtask
 
+    //Tarea para verificar un valor leído con el esperado
     task veri_register(input [3:0] reg_addr, input [15:0] esperado);
         logic [15:0] read_value;
         test_count++;
@@ -127,6 +131,30 @@ module tester;
         end
     endtask
 
+    //Tarea para probar vaores extremos:
+    task test_valores_extremos();
+        // Valor mínimo
+        write_register(0, 16'h0000);
+        veri_register(0, 16'h0000);
+
+        // Valor máximo
+        write_register(1, 16'hFFFF);
+        veri_register(1, 16'hFFFF);
+
+        // Bit más significativo activado (caso de signo si fuera int)
+        write_register(2, 16'h8000);
+        veri_register(2, 16'h8000);
+
+        // Valor intermedio con patrón alternante
+        write_register(3, 16'hAAAA);
+        veri_register(3, 16'hAAAA);
+
+        // Otro patrón: 0101...
+        write_register(4, 16'h5555);
+        veri_register(4, 16'h5555);
+    endtask
+
+    //Tarea para hacer las pruebas aleatorias:
     task random_transaction();
         bit do_write;
         bit [3:0] rand_addr;
@@ -158,6 +186,8 @@ module tester;
     endtask
 
 
+    //Función que genera los reportes de las pruebas
+    // Muestra la info en la terminal y en el documento
 
     function void generate_report();
         string result;
@@ -222,6 +252,7 @@ module tester;
         $fdisplay(log_file_, " - Pruebas aleatorias: %0d", num_random_tests);
         $fdisplay(log_file_, "============================================");
 
+        //Se genera el archivo vcd para poder usar gtkwave
         $dumpfile("tester.vcd");
         $dumpvars(0, tester);
 
@@ -238,6 +269,10 @@ module tester;
             write_register(i, test_data);
             veri_register(i, test_data);
         end
+        end_test();
+
+        begin_test("Prueba de valores extremos");
+        test_valores_extremos();
         end_test();
 
         begin_test("Prueba de transacciones aleatorias");
