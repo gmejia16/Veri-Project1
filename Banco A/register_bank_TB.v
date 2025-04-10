@@ -1,5 +1,9 @@
 //////////////////////////////////////////////////////////
-// Testbench para el banco de registros
+//
+// tb_top.v 
+//  
+// Este es un testbench básico para las pruebas del banco
+//
 //////////////////////////////////////////////////////////
 
 module tb_top;
@@ -23,7 +27,7 @@ module tb_top;
         .data_out(data_out)
     );
 
-    // Generación del reloj (alternando cada 5 unidades de tiempo)
+    // Generación del reloj (siempre alternando cada 5 unidades de tiempo)
     always begin
         #5 clk = ~clk;
     end
@@ -39,8 +43,7 @@ module tb_top;
         data_in = 16'h0000;
 
         // Abrir archivo VCD
-        // El archivo VCD es para el test
-        $dumpfile("simulation.vcd");  // Establece el nombre del archivo VCD
+        $dumpfile("simulation.vcd");  // Archivo VCD
         $dumpvars(0, tb_top);         // Registra todas las señales del testbench
 
         // Aplicar reset
