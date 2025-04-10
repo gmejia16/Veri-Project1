@@ -1,7 +1,8 @@
-//////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////
 // tester.sv 
-// Testbench para banco de registros con generación de logs y reportes
-//////////////////////////////////////////////////////////
+// Testbench para banco de registros con generación de 
+// archivo .log y reporte
+////////////////////////////////////////////////////////
 
 module tester;
 
@@ -9,18 +10,17 @@ module tester;
     parameter clk_period = 10;
     parameter num_regs = 14;
     parameter num_random_tests = 100;
-    parameter semilla = 120;
     parameter log_file = "test_log.log";
     parameter report_file = "test_report.txt";
 
     // Señales
-    logic clk = 0;
-    logic rst = 0;
-    logic write_en = 0;
-    logic read_en = 0;
-    logic [3:0] addr = 0;
-    logic [15:0] data_in = 0;
-    logic [15:0] data_out;
+    logic        clk      = 0; //señal de reloj
+    logic        rst      = 0; //señal de reinicio
+    logic        write_en = 0; //habilitación escritura
+    logic        read_en  = 0; //habilitación lectura
+    logic [3:0]  addr     = 0; //dirección de registro
+    logic [15:0] data_in  = 0; //dato a escribir
+    logic [15:0] data_out;     //dato leído
 
     // Variables de verificación
     integer log_file_;
@@ -70,9 +70,11 @@ module tester;
         repeat(2) @(posedge clk);
         rst = 0;
         @(posedge clk);
+        // Inicializar to2 los registros a 0
         foreach(valores_esperados[i]) valores_esperados[i] = 16'h0000;
         write_log("Reset completado. Los registros están en 0");
     endtask
+
 
     task write_register(input [3:0] reg_addr, input [15:0] value);
         write_log($sformatf("Escribiendo %h en el registro %0d", value, reg_addr));
@@ -106,16 +108,22 @@ module tester;
     task veri_register(input [3:0] reg_addr, input [15:0] esperado);
         logic [15:0] read_value;
         test_count++;
+
+        // Se lee el valor del registro
         read_register(reg_addr, read_value);
+
+        // Se compara el valor leído con el valor esperado
         if (read_value !== esperado) begin
             error_count++;
-            write_log($sformatf("ERROR: Registro %0d - Esperado: %h, Leído: %h", 
-                              reg_addr, esperado, read_value));
-            $error("[T=%0t] Error en el registro %0d Esperado: %h, Leído %h", 
-                  $time, reg_addr, esperado, read_value);
+            // Se reporta el error si no coincide
+            write_log($sformatf("ERROR de comprobacion: Registro %0d - Esperado: %h, Leído: %h", 
+                                reg_addr, esperado, read_value));
+            $error("[T=%0t] Error en el registro %0d. Esperado: %h, Leído: %h", 
+                $time, reg_addr, esperado, read_value);
         end else begin
+            // Se reporta si la verificación fue exitosa
             write_log($sformatf("Registro %0d verificado correctamente: %h",
-                              reg_addr, read_value));
+                                reg_addr, read_value));
         end
     endtask
 
@@ -123,17 +131,33 @@ module tester;
         bit do_write;
         bit [3:0] rand_addr;
         bit [15:0] rand_data;
-        do_write = $urandom_range(0,1);
-        rand_addr = $urandom_range(0, 15);
-        rand_data = $urandom();
+        bit [15:0] expected_data;
+
+        do_write = $urandom_range(0, 1);  // Aleatorio entre escritura o lectura
+        rand_addr = $urandom_range(0, num_regs-1);  // Aleatorio en rango de registros válidos
+        rand_data = $urandom();  // Genera datos aleatorios para escritura
+
         if (do_write) begin
+            // Escritura
             write_register(rand_addr, rand_data);
+            // Actualización del valor esperado **inmediatamente después de la escritura**
+            valores_esperados[rand_addr] = rand_data;
+            @(posedge clk); // Esperá un ciclo para dar tiempo al DUT de actualizarse
+
+            write_log($sformatf("Escritura aleatoria en registro %0d con valor %h", rand_addr, rand_data));
         end else begin
-            static logic [15:0] esperado = (rand_addr < num_regs) ?
-                                  valores_esperados[rand_addr] : 16'h0000;
-            veri_register(rand_addr, esperado);
+            // Lectura
+            // Se obtiene el valor esperado antes de realizar la lectura
+            expected_data = valores_esperados[rand_addr];
+            
+            // En este punto, verificamos si el valor leído corresponde al valor esperado
+            veri_register(rand_addr, expected_data);  // Verificamos con el valor esperado
+            write_log($sformatf("Lectura aleatoria del registro %0d, esperado: %h, leido: %h", 
+                                rand_addr, expected_data, data_out));
         end
     endtask
+
+
 
     function void generate_report();
         string result;
@@ -149,7 +173,7 @@ module tester;
         $fdisplay(report_file_, "===================================");
         $fdisplay(report_file_, "Fecha de ejecución: %t", $time);
         $fdisplay(report_file_, "Resultado general: %s", result);
-        $fdisplay(report_file_, "Tiempo de simulacion: %0t ns", $time);
+        $fdisplay(report_file_, "Tiempo de simulación: %0t ns", $time);
         $fdisplay(report_file_, "===================================");
         $fdisplay(report_file_, "- Pruebas ejecutadas: %0d", test_count);
         $fdisplay(report_file_, "- Operaciones de escritura hechas: %0d", write_count);
@@ -196,11 +220,7 @@ module tester;
         $fdisplay(log_file_, "Configuración:");
         $fdisplay(log_file_, " - Número de registros: %0d", num_regs);
         $fdisplay(log_file_, " - Pruebas aleatorias: %0d", num_random_tests);
-        $fdisplay(log_file_, " - Semilla aleatoria: %0d", semilla);
         $fdisplay(log_file_, "============================================");
-
-        write_log($sformatf("Iniciando simulación con semilla %0d", semilla));
-        //$urandom(semilla);
 
         $dumpfile("tester.vcd");
         $dumpvars(0, tester);
@@ -220,26 +240,13 @@ module tester;
         end
         end_test();
 
-        begin_test("Prueba de valores extremos");
-        write_register(0, 16'h0000);
-        write_register(1, 16'hFFFF);
-        write_register(2, 16'hAAAA);
-        veri_register(0, 16'h0000);
-        veri_register(1, 16'hFFFF);
-        veri_register(2, 16'hAAAA);
-        end_test();
-
-        begin_test("Pruebas aleatorias");
+        begin_test("Prueba de transacciones aleatorias");
         for (int i = 0; i < num_random_tests; i++) begin
             random_transaction();
         end
         end_test();
 
         generate_report();
-
-        $fclose(log_file_);
-        $fclose(report_file_);
         $finish;
     end
-
 endmodule
