@@ -15,3 +15,8 @@ Si se está ejecutando el código por primera vez en icarus, se debe:
 
 * Para visualizar las señales en GTKWAVE \
   `gtkwave simulation.vcd`
+
+* Para ejecutar el archivo tester final: \
+  `iverilog -g2012 -o simv tester.sv top_bank.v control_unit.v reg_file.v mux.v demux.v` \
+  `vvp simv` \
+  `gtkwave tester.vcd`
